@@ -10,6 +10,7 @@ var url = require("url");
 // import the module (in the same directory so we use ./)
 var myModule = require('./module.js');
 var albumQuery = require('./albumQuery.js');
+var sarahServer = require('./sarahserver');
 
 //create a server object:
 //the arrow function is a callback fucntion 
