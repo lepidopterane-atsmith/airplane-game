@@ -2,14 +2,17 @@
    this is the http server file that creates 
    an http server, process the client incoming requests
    and call the funciton that is exported by module.js
+
+   remixed w/SarahServer by Sarah Abowitz
 */
 
 // require node modules 
 var http = require('http');
 var url = require("url");
 // import the module (in the same directory so we use ./)
-var myModule = require('./sarahserver.js');
-var albumQuery = require('./albumQuery.js');
+// var myModule = require('./module.js');
+var processRequest = require('./processRequest.js');
+var sarahServer = require('./sarahserver');
 
 //create a server object:
 //the arrow function is a callback fucntion 
@@ -23,12 +26,12 @@ myserver = http.createServer((req, res) => {
     // If URL contains a file path, call the method that reads and serves a static file
     if (path && path.length > 1){
         // call serveStatic function in module.js
-        myModule.sendFile(path, res);
+        sarahServer.sendFile(path, res);
     }
     // If the URL contains a query
     if (queryObj.request){
         // call the method that process and serves up the response to this query
-        albumQuery.processQuery(queryObj, res);
+        processRequest.processQuery(queryObj, res);
     }
 });
 
