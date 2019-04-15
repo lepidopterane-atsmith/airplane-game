@@ -8,7 +8,7 @@
 var http = require('http');
 var url = require("url");
 // import the module (in the same directory so we use ./)
-var myModule = require('./module.js');
+var myModule = require('./sarahserver.js');
 var albumQuery = require('./albumQuery.js');
 
 //create a server object:
@@ -23,7 +23,7 @@ myserver = http.createServer((req, res) => {
     // If URL contains a file path, call the method that reads and serves a static file
     if (path && path.length > 1){
         // call serveStatic function in module.js
-        myModule.serveStatic(req, res);
+        myModule.sendFile(path, res);
     }
     // If the URL contains a query
     if (queryObj.request){
