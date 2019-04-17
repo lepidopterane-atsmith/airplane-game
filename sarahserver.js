@@ -4,9 +4,6 @@
 // But I called this sarahserver
 // because it has server fns
 // and I made it
-// is this going to show?
-// second commit test
-//Testing adding something!!!
 
 // modules we need:
 fs = require('fs'); // fs we need because we're reading FILES
@@ -16,7 +13,7 @@ path = require('path'); // path is where extname lives
 // sends client files they neeeed
 exports.sendFile = function(filePath, res){
     console.log(filePath);
-    fs.readFile(filePath,"binary",function(err,data) {
+    fs.readFile("public_html"+filePath,"binary",function(err,data) {
         if (err) { 
             // if we got an error, the file isn't in public_html
             // (probably because the request was misspelled)
