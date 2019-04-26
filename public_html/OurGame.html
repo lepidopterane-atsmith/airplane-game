@@ -1,63 +1,22 @@
 <!DOCTYPE html>
 <html>
-<head>
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<style>
-canvas {
-    
-    border:10px solid #d3d3d3;
-    background-color: #f1f1f1;
-    padding: 0;
-    margin: auto;
-    display: block;
-    width: 550px;
-    height: 500px;
-    position: absolute;
-    top: 0;
-    bottom: 0;
-    left: 0;
-    right: 0;
-}
-#healthbar {
-    border:2px solid #a71e1e;
-    background-color: #f1f1f1;
-    padding: 0;
-    margin: auto auto 90px auto;
-    display: block;
-    width: 200px;
-    height: 40px;
-    position: absolute;
-    top: 0;
-    bottom: 0;
-    left: 0;
-    right: 0;
-}
-#healthbar2 {
-    border:2px solid #f10ecb;
-    background-color: #f1f1f1;
-    padding: 0;
-    margin: 90px auto auto auto;
-    display: block;
-    width: 200px;
-    height: 40px;
-    position: absolute;
-    top: 0;
-    bottom: 0;
-    left: 0;
-    right: 0;
+<body>
+<p style="text-align:center">YOUR OPPONENT'S HEALTH: </p>
+<canvas id="hbar1" width="200" height="40" style="border: 2px solid blue;
+background-color:rgb(122, 129, 115); margin: auto auto auto auto; display: block; position: relative"></canvas>  
+<br>
 
-}
-</style>
-</head>
-<body onload="startGame()">
+<canvas id="myCanvas" width="550" height="500"  width="550px" height="500px" style="border: 10px solid gray;
+background-color: rgb(213, 230, 253); margin: auto; display: block; position: relative">
+Your browser does not support the HTML5 canvas tag.</canvas>
+
+<p style="text-align:center">YOUR HEALTH: </p>
+<canvas id="hbar2" width="200" height="40" style="border: 2px solid blue;
+background-color:rgb(122, 129, 115); margin: auto auto auto auto; display: block; position: relative"></canvas>  
+<br>
 <script src="js/OurGame.js">
 
 </script>
-<br>
 
-
-<div id="healthbar"></div>
-
-<div id="healthbar2"></div>
 </body>
 </html>

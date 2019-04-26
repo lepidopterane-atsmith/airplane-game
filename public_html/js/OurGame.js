@@ -1,43 +1,134 @@
 /*
-Log of what i've done: 
-removed elements that have gravity, create the obstacles
-adding functions movePlane and hitSides, under component
-made orbs be able to fire (using 's' and up arrow keys), made "planes" move and stop at edge of canvas
-centered canvas and put health bars in appropriate places 
-
-Cite: 
+Cite: https://developer.mozilla.org/en-US/docs/Web/API/Canvas_API/Tutorial/Basic_animations
+https://stackoverflow.com/questions/109086/stop-setinterval-call-in-javascript
 https://stackoverflow.com/questions/5597060/detecting-arrow-key-presses-in-javascript
 https://www.w3schools.com/graphics/game_intro.asp
 https://stackoverflow.com/questions/5127937/how-to-center-canvas-in-html5
+
+Order of things in this file: 
+- variables
+- startgame function 
+- a few server listeners
+- component function/ object creation
+- update game fucntion
+- couple other minor functions 
+- event listeners for appropriate key presses 
+- a few query stringifiers
+
+UI implemented by Joarvi
+Server communication implemented by Sarah
+
 */
 
+var playerID = -1; // we're going to mimic HW5 a little here w/P2P fun
+
+//Game canvas and contexts
+var c = document.getElementById("myCanvas");
+var ctx = c.getContext("2d");
+//health bar canvases and contexts
+var hbar1 = document.getElementById("hbar1");
+var hbar2 = document.getElementById("hbar2");
+var ctx1 = hbar1.getContext("2d");
+var ctx2 = hbar2.getContext("2d");
+
+var A1 = new Image();
+var A2 = new Image();
+var frameNo = 0;
+var gameOver = false;
+var winner = "";
+var orbSpeed = 5;
+//---------Airplane variables/booleans----------
 var airplane1;
 var airplane2;
 var Orbs1 = []; //orbs shot by airplane 1 
 var Orbs2 = []; //orbs shot by airplane 2
-var myScore;
+var health1 = 500; //total health of airplane 1
+var health2 = 500; //total health of airplane 2 
+
+/*each airplane has these booleans determining if it should be 
+traveling left, right, or shooting */ 
 var left = false;
 var right = false;
+var shooting = false;
 var left2 = false;
 var right2 = false;
-var shooting = false;
 var shooting2 = false;
 
-
 function startGame() {
-    airplane1 = new component(30, 30, "red", 100, 120, 'A1');
+    //airplane components are/willbe the hit boxes for the planes 
+    airplane1 = new component(100, 0, 50, 100, "red", "A1"); //A1 is red and at top
+    airplane2 = new component(100, 400, 50, 100, "blue", "A2"); //A2 at bottom
 
-    airplane2 = new component(30, 30, "blue", 100, 0, 'A2');
+    //WILL NEED TO ADD THIS BACK IN W/ CORRECT PLANE PICS
+    //A1.src = "plane.png";
+    //A2.src = "upArrow.png";
 
+    intervalID = setInterval(updateGame, 20); 
 
+    // Server registration time!!
+    var xmlHttpRequest = new XMLHttpRequest();
+    xmlHttpRequest.onload = initOnload;
+    xmlHttpRequest.onerror = function () {console.log(
+        "Error registering to the server")};
+    var data = {};
+    data.request = "gameStart";
+    msg = queryObjectToString(data);
+    xmlhttp.open("GET","http://localhost:8080/?"+msg);
+    xmlhttp.send();
     
-    //myScore = new component("30px", "Consolas", "black", 280, 40, "text");
-    myGameArea.start();
+}
+
+// if registering w/server went ok, reassigns ID + begins polling
+function initOnload() {
+    if (this.status == 200) {
+        response = JSON.parse(this.responseText);
+        playerID = response.id;
+        // sendPollRequests();
+    }
+}
+
+// recursively polls the server for updates!
+function sendPollRequests(){
+    // we will first prepare the opponent motion request
+    var xmlHttpMovesRequest = new XMLHttpRequest();
+    // xmlHttpMotionRequest.onload = pollMotion
+    xmlHttpMovesRequest.onerror = function () {console.log(
+        "Error polling the server for moves")};
+    var moveData = {};
+    moveData.request = 'pollMotion';
+    moveData.id = myId;
+    moveMsg = queryObjectToString(moveData);  
+    xmlHttpMovesRequest.open("GET", "http://localhost:8080/?"+msg);
+    xmlHttpMovesRequest.send();
+
+    // and now we prepare the damage request (sending in damage)
+    var xmlHttpHitRequest = new XMLHttpRequest();
+    // xmlHttpMotionRequest.onload = pollHits
+    xmlHttpHitsRequest.onerror = function () {console.log(
+        "Error polling the server for moves")};
+    var hitData = {};
+    hitData.request = 'pollHits';
+    hitData.id = myId;
+    hitMsg = queryObjectToString(hitData);  
+    xmlHttpHitsRequest.open("GET", "http://localhost:8080/?"+msg);
+    xmlHttpHitsRequest.send();
+
+    setTimeout(sendPollRequest,500);
+}
+
+function pollMotionOnload(){
+    if (this.status == 200) {
+        console.log("\nresponse text "+this.responseText);
+        response = JSON.parse(this.responseText);
+        cpuMoves = response.data;
+        // cpuMoves.forEach();
+        // ^ will be finished/resolved next Sarah update
+    }
 }
 
 //irrelevant now
-function checkforclicks() {
-    document.onkeydown = function(e) {
+function checkForClicks() {
+    document.onKeyDown = function(e) {
         switch (e.keyCode) {
             case 37:
                 alert('left');
@@ -55,18 +146,196 @@ function checkforclicks() {
     };
 }
 
-//checkforclicks();
-//_______________________________________________ EVENT HANDLERS FOR MOVEMENT
+function component(x, y, width, height, color, type) {
+    this.x = x;
+    this.y = y;
+    this.width = width;
+    this.height = height;
+    this.color = color;
+    this.type = type;
+    this.speedX = 5;
+    //if the plane is moving right, left, or shooting these will = true
+    
+    
+    this.update = function () {
+        ctx = c.getContext("2d");
+        if (this.type == "A1" || this.type == "A2") {
+
+            ctx.fillStyle = this.color;
+            ctx.fillRect(this.x, this.y, this.width, this.height); 
+            //WILL NEED TO ADD THIS BACK IN WHEN WE HAVE PICS
+            //ctx.drawImage(A1, this.x, this.y, this.width, this.height);
+        } else if (this.type == "orb") {
+            ctx.fillStyle = this.color; 
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, 4, 0, 2*Math.PI);
+            ctx.stroke();
+        }
+
+        //update health bars
+        
+        perc1 = health1 / 500; 
+        perc2 = health2 / 500;
+
+        //Health Bar 1
+        ctx1.fillStyle = "chartreuse";
+        ctx1.fillRect(0,0, (hbar1.width * perc1), hbar1.height);
+
+        //Health Bar 2 
+        ctx2.fillStyle = "chartreuse";
+        ctx2.fillRect(0, 0, (hbar2.width * perc2), hbar2.height);
+    }
+
+    this.newPos = function() {
+        this.movePlane(); //see if plane should be moved
+        this.hitSides(); //see if plane is hitting sides of canvas
+        this.isShooting(); //see if plane should be shooting
+    }
+    this.movePlane = function() {
+        //uses booleans to determine whether should be moving right or left 
+        
+        if (this.type =="A1") {
+            if (left) {
+                this.x = this.x - this.speedX;
+            } else if (right) {
+                this.x = this.x + this.speedX;
+            } 
+        } else if (this.type == "A2") {
+            if (left2) {
+                this.x = this.x - this.speedX;
+            } else if (right2) {
+                this.x = this.x + this.speedX;
+            }
+        }
+        
+    }
+    this.hitSides = function() {
+        //checks if it hits sides of the canvas 
+        var canvasWidth = c.width;
+        if ((this.x+this.width) >= canvasWidth) {
+            this.x = canvasWidth-this.width;
+        } else if (this.x < 0) {
+            this.x = 0;
+        }
+    }
+    this.isShooting = function() {
+        //A1 is at the bottom, so needs to shoot upward
+        //A2 at top so needs to shoot downward 
+        if (shooting == true && this.type == "A1") { 
+            AddOrbs(Orbs1, this.x + (this.width/2), this.y + (this.height)); //pass addOrbs specific coordinates so it appears to shoot from center
+        } else if (shooting2 == true && this.type == "A2") {
+            AddOrbs(Orbs2, this.x + (this.width/2), this.y);
+            
+        }
+    }
+    this.crashWith = function(otherobj) {
+        var myleft = this.x;
+        var myright = this.x + (this.width);
+        var mytop = this.y;
+        var mybottom = this.y + (this.height);
+        var otherleft = otherobj.x;
+        var otherright = otherobj.x + (otherobj.width);
+        var othertop = otherobj.y;
+        var otherbottom = otherobj.y + (otherobj.height);
+        var crash = true;
+        if ((mybottom < othertop) || (mytop > otherbottom) || (myright < otherleft) || (myleft > otherright)) {
+            crash = false;
+        }
+        /*
+        if ((mytop < otherbottom) && (myleft > otherleft) && (myright < otherright)) {
+            crash = true;
+        }*/
+        return crash;
+    }
+
+}
+
+function updateGame() {
+    //this function is called by setInterval, is the core of the "animation"
+    frameNo += 1; 
+    clearGameArea();
+
+    if (gameOver == false) {
+        //check if either of the two planes is crashing with any orbs
+        for (i = 0; i < Orbs2.length - 1; i++) {
+            if (airplane1.crashWith(Orbs2[i])) {
+                //Orbs2.splice[i, 1];
+                health1 -= .2;
+                health1 = Math.floor(health1);
+                if (health1 <= 0) {  //if health falls below zero, game over
+                    gameOver = true;
+                    winner = "Bottom/blue/You win!"
+                }
+                //console.log(health1);
+            }
+        }
+        for (i = 0; i < Orbs1.length - 1; i++) {
+            if (airplane2.crashWith(Orbs1[i])) {
+                //Orbs2.splice[i, 1];
+                //console.log("hittinggg");
+                health2 -= .2;
+                health2 = Math.floor(health2);
+                //console.log(health2);
+                if (health2 <= 0) {  //if health falls below zero, game over
+                    gameOver = true;
+                    winner = "Top/Red/enemy wins!"
+                }
+            }
+        }
+        //Update/animate the orbs shooting
+        for (i = 0; i < Orbs1.length; i++) { //1 is at the top, so needs to shoot downwards
+            Orbs1[i].y += orbSpeed;
+            Orbs1[i].update(); //could get "fancy" and check when outside of win and delete them once they are 
+        }
+        for (i = 0; i < Orbs2.length; i++) { //2 is at the bottom, so needs to shoot upwards
+            Orbs2[i].y += -orbSpeed;
+            Orbs2[i].update();
+        }
+        //update/animate the planes
+        airplane1.update();
+        airplane1.newPos();
+        airplane2.update();
+        airplane2.newPos();
+
+    } else if (gameOver) {
+        //Put up font in myCanvas that the game is over! 
+        ctx.font = "40px Arial";
+        ctx.fillText(winner, 100, 100);
+        clearInterval(intervalID);
+    }
+
+}
+
+function AddOrbs(orbList, x, y) {
+    //the if statements makes it so that the orbs are spaced out 
+    
+    if ((frameNo / 10) % 1 == 0) {
+        orbList.push(new component(x, y, 15, 15, "black", "orb"));
+    }
+    //orbList.push(new component(x, y, 10, 10, "black", "orb"));
+}
+
+//Need to clear in order to help with the "animation"
+function clearGameArea() {
+    ctx.clearRect(0, 0, c.width, c.height);
+    ctx1.clearRect(0, 0, hbar1.width, hbar1.height);
+    ctx2.clearRect(0,0, hbar2.width, hbar2.height);
+}
+
+
+//_________________________BELOW ARE EVENT LISTENERS FOR KEYS & THEIR FUNCTIONS______________________________________
+
 document.onkeydown = checkKey;
-document.onkeyup = resetMovement
+document.onkeyup = resetMovement; 
 
 function checkKey(e) {
-
     e = e || window.event;
 
+    
     if (e.keyCode == '38') {
         // up arrow
         shooting = true;
+        //console.log("up arrow being pressed");
     }
     else if (e.keyCode == '37') {
        // left arrow
@@ -88,12 +357,14 @@ function checkKey(e) {
 
 }
 
+//once the key is lifted, the appropriate boolean should be changed back to being false 
 function resetMovement(e) {
 
     e = e || window.event;
 
     if (e.keyCode == '38') {
         // up arrow
+        //console.log("undone");
         shooting = false;
     }
     else if (e.keyCode == '37') {
@@ -115,193 +386,30 @@ function resetMovement(e) {
     }
 
 }
-//______________________________________________
 
+// From HW5:
+//////////////////////////////////////////////////////////
 
-//takes which airplane orb list needs to be added to 
-function ShootEm(orbList, x, y) {
-    if (everyinterval(10)) {
-        orbList.push(new component(10, 10, "black", x, y, "orb"));
-    }
-}
+// stringifies query objects, this function doesn't mess around
+function queryObjectToString(query) {
+    console.log(query);
+    var properties = Object.keys(query);
+    var arrOfQueryStrings = properties.map(prop => prop+"="+handleSpaces(query[prop].toString()));
+    console.log(arrOfQueryStrings.join('&'));
+    return(arrOfQueryStrings.join('&'));
+ }
 
-
-var myGameArea = {
-    canvas : document.createElement("canvas"),
-    start : function() {
-        /*this.canvas.width = 480;
-        this.canvas.height = 270;*/
-        this.context = this.canvas.getContext("2d");
-        document.body.insertBefore(this.canvas, document.body.childNodes[0]);
-        this.frameNo = 0;
-        this.interval = setInterval(updateGameArea, 20);
-        },
-    clear : function() {
-        this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
-    }
-    
-}
-
-
-
-function component(width, height, color, x, y, type) {
-    this.type = type;
-    this.score = 0;
-    this.width = width;
-    this.height = height;
-    this.speedX = 10;
-    //this.speedY = 3;    
-    this.x = x;
-    this.y = y;
-    this.right = false;
-    this.left = false;
-    
-    this.update = function() {
-        ctx = myGameArea.context;
-        /*if (this.type == "text") { //If a text object do this 
-            ctx.font = this.width + " " + this.height;
-            ctx.fillStyle = color;
-            ctx.fillText(this.text, this.x, this.y);
-        } else {
-            ctx.fillStyle = color;
-            ctx.fillRect(this.x, this.y, this.width, this.height); //this will be somewhat changed to accomadate the airplane size/space 
-        }*/
-        if (this.type == "A1" || this.type == "A2" ) {
-            ctx.fillStyle = color;
-            ctx.fillRect(this.x, this.y, this.width, this.height); //this will be somewhat changed to accomadate the airplane size/space 
-        } else if (this.type == "orb") {
-            ctx.fillStyle = color; 
-            ctx.beginPath();
-            ctx.arc(this.x, this.y, 4, 0, 2*Math.PI);
-            ctx.stroke();
-        }
+// helper function for whitespace encountered in queryObjectToString
+function handleSpaces(str) {
+    var newStr = "";
+    for (k = 0; k < str.length; k++) {    
         
+        if (str[k] == " ")
+            newStr += "+";
+        else
+            newStr += str[k];    
     }
-    this.newPos = function() {
-        this.movePlane(); //ADD THIS 
-        this.hitSides(); //change hit bottom to check if hit sides of screen 
-        this.isShooting();
-    }
-
-    this.isShooting = function() {
-        //A1 is at the bottom, so needs to shoot upward
-        if (shooting == true && this.type == "A1") {
-            ShootEm(Orbs1, this.x + (this.width/2), this.y);
-        } else if (shooting2 == true && this.type == "A2") {
-            ShootEm(Orbs2, this.x + (this.width/2), this.y + (this.height));
-        }
-        //A2 at top so needs to shoot downward 
-    }
-
-
-
-    this.movePlane = function() {
-         
-        
-        if (this.type =="A1") {
-            if (left) {
-                this.x = this.x - this.speedX;
-            } else if (right) {
-                this.x = this.x + this.speedX;
-                } 
-        } else if (this.type == "A2") {
-            if (left2) {
-                this.x = this.x - this.speedX;
-            } else if (right2) {
-                this.x = this.x + this.speedX;
-        }
-    }
-        
-
-    }
-    this.hitSides = function() {
-        var canvasWidth = myGameArea.canvas.width - this.width;
-        if (this.x > canvasWidth) {
-            this.x = canvasWidth;
-        } else if (this.x < 0) {
-            this.x = 0;
-        }
-    }
-    this.crashWith = function(otherobj) { //change to crash with and orb, i.e. if gets hit basically, basically change to top down 
-        //orientation rather than left right orientation for checking for crash 
-        var myleft = this.x;
-        var myright = this.x + (this.width);
-        var mytop = this.y;
-        var mybottom = this.y + (this.height);
-        var otherleft = otherobj.x;
-        var otherright = otherobj.x + (otherobj.width);
-        var othertop = otherobj.y;
-        var otherbottom = otherobj.y + (otherobj.height);
-        var crash = true;
-        if ((mybottom < othertop) || (mytop > otherbottom) || (myright < otherleft) || (myleft > otherright)) {
-            crash = false;
-        }
-        return crash;
-    }
+    return newStr;
 }
 
-function updateGameArea() {
-    var x, height, gap, minHeight, maxHeight, minGap, maxGap;
-    /* obstacles
-    for (i = 0; i < myObstacles.length; i += 1) {
-        if (myGamePiece.crashWith(myObstacles[i])) {
-            return;
-        } 
-        /*could use crash with to test/update whether airplanes have been hit by orbs 
-    } */ 
-    myGameArea.clear();
-    
-    myGameArea.frameNo += 1;
-
-    /*
-    this spits out the green obstacle rectangles 
-    if (myGameArea.frameNo == 1 || everyinterval(150)) {
-        x = myGameArea.canvas.width;
-        minHeight = 20;
-        maxHeight = 200;
-        height = Math.floor(Math.random()*(maxHeight-minHeight+1)+minHeight);
-        minGap = 50;
-        maxGap = 200;
-        gap = Math.floor(Math.random()*(maxGap-minGap+1)+minGap);
-        myObstacles.push(new component(10, height, "green", x, 0));
-        myObstacles.push(new component(10, x - height - gap, "green", x, height + gap));
-    }
-    obstacle checking, could be useful for checkign if hit by orbs 
-    for (i = 0; i < myObstacles.length; i += 1) {
-        myObstacles[i].x += -1;
-        myObstacles[i].update();
-    }
-    myScore.text="SCORE: " + myGameArea.frameNo;
-    myScore.update();
-    */
-    //myGamePiece.newPos();
-    //myGamePiece.update();
-
-    for (i = 0; i < Orbs1.length; i++) { //1 is at the bottom
-        Orbs1[i].y += -1;
-        Orbs1[i].update(); //could get "fancy" and check when outside of win and delete them once they are 
-
-    }
-    for (i = 0; i < Orbs2.length; i++) { //1 is at the bottom
-        Orbs2[i].y += 1;
-        Orbs2[i].update(); 
-    }
-
-    airplane1.newPos();
-    airplane1.update();
-
-    airplane2.newPos();
-    airplane2.update();
-}
-
-
-function everyinterval(n) {
-    if ((myGameArea.frameNo / n) % 1 == 0) {return true;}
-    return false;
-}
-
-/*
-function accelerate(n) {
-    myGamePiece.gravity = n;
-}
-*/
+startGame();
