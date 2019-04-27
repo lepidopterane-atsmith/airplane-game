@@ -9,7 +9,7 @@ Order of things in this file:
 - variables
 - startgame function 
 - a few server listeners
-- component function/ object creation
+- component function/object creation
 - update game fucntion
 - couple other minor functions 
 - event listeners for appropriate key presses 
