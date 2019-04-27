@@ -4,6 +4,7 @@ https://stackoverflow.com/questions/109086/stop-setinterval-call-in-javascript
 https://stackoverflow.com/questions/5597060/detecting-arrow-key-presses-in-javascript
 https://www.w3schools.com/graphics/game_intro.asp
 https://stackoverflow.com/questions/5127937/how-to-center-canvas-in-html5
+https://stackoverflow.com/questions/14012768/html5-canvas-background-image
 
 Order of things in this file: 
 - variables
@@ -20,6 +21,7 @@ Server communication implemented by Sarah
 
 */
 
+
 var playerID = -1; // we're going to mimic HW5 a little here w/P2P fun
 
 //Game canvas and contexts
@@ -31,6 +33,7 @@ var hbar2 = document.getElementById("hbar2");
 var ctx1 = hbar1.getContext("2d");
 var ctx2 = hbar2.getContext("2d");
 
+var background = new Image();
 var A1 = new Image();
 var A2 = new Image();
 var frameNo = 0;
@@ -56,12 +59,13 @@ var shooting2 = false;
 
 function startGame() {
     //airplane components are/willbe the hit boxes for the planes 
-    airplane1 = new component(100, 0, 50, 100, "red", "A1"); //A1 is red and at top
-    airplane2 = new component(100, 400, 50, 100, "blue", "A2"); //A2 at bottom
+    airplane1 = new component(100, 15, 40,75, "red", "A1"); //A1 is red and at top
+    airplane2 = new component(100, 400, 40, 75, "blue", "A2"); //A2 at bottom
 
     //WILL NEED TO ADD THIS BACK IN W/ CORRECT PLANE PICS
-    //A1.src = "plane.png";
-    //A2.src = "upArrow.png";
+    A1.src = "opponentPlane.png";
+    A2.src = "playerPlane.png";
+    background.src = "background.png";
 
     intervalID = setInterval(updateGame, 20); 
 
@@ -159,12 +163,21 @@ function component(x, y, width, height, color, type) {
     
     this.update = function () {
         ctx = c.getContext("2d");
-        if (this.type == "A1" || this.type == "A2") {
-
-            ctx.fillStyle = this.color;
+        if (this.type == "A1") {
+            
+            /*
+            UN-COMMENT THIS TO VISUALLY SEE HITBOXES
+            ctx.fillStyle = "white";
+            ctx.fillRect(this.x, this.y, this.width, this.height);
+            */
+            ctx.drawImage(A1, this.x-30, this.y-10);
+        } else if (this.type == "A2") {
+            /*
+            UN-COMMENT THIS TO VISUALLY SEE HITBOXES
+            ctx.fillStyle = "white";
             ctx.fillRect(this.x, this.y, this.width, this.height); 
-            //WILL NEED TO ADD THIS BACK IN WHEN WE HAVE PICS
-            //ctx.drawImage(A1, this.x, this.y, this.width, this.height);
+            */
+            ctx.drawImage(A2, this.x-30, this.y-15);
         } else if (this.type == "orb") {
             ctx.fillStyle = this.color; 
             ctx.beginPath();
@@ -320,6 +333,7 @@ function clearGameArea() {
     ctx.clearRect(0, 0, c.width, c.height);
     ctx1.clearRect(0, 0, hbar1.width, hbar1.height);
     ctx2.clearRect(0,0, hbar2.width, hbar2.height);
+    ctx.drawImage(background, 0,0,c.width,c.height);
 }
 
 
@@ -413,3 +427,6 @@ function handleSpaces(str) {
 }
 
 startGame();
+
+
+
