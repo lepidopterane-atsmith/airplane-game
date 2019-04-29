@@ -36,6 +36,8 @@ var ctx2 = hbar2.getContext("2d");
 var background = new Image();
 var A1 = new Image();
 var A2 = new Image();
+var orb1Img = new Image();
+var orb2Img = new Image();
 var frameNo = 0;
 var gameOver = false;
 var winner = "";
@@ -58,14 +60,16 @@ var right2 = false;
 var shooting2 = false;
 
 function startGame() {
-    //airplane components are/willbe the hit boxes for the planes 
+    //airplane components are    the hit boxes for the planes 
     airplane1 = new component(100, 15, 40,75, "red", "A1"); //A1 is red and at top
     airplane2 = new component(100, 400, 40, 75, "blue", "A2"); //A2 at bottom
 
-    //WILL NEED TO ADD THIS BACK IN W/ CORRECT PLANE PICS
+    //Add sources for plane and background pics
     A1.src = "opponentPlane.png";
     A2.src = "playerPlane.png";
     background.src = "background.png";
+    orb1Img.src = "opponentOrb.png";
+    orb2Img.src = "playerOrb.png";
 
     intervalID = setInterval(updateGame, 20); 
 
@@ -130,6 +134,7 @@ function pollMotionOnload(){
     }
 }
 
+/*
 //irrelevant now
 function checkForClicks() {
     document.onKeyDown = function(e) {
@@ -149,7 +154,7 @@ function checkForClicks() {
         }
     };
 }
-
+*/
 function component(x, y, width, height, color, type) {
     this.x = x;
     this.y = y;
@@ -164,7 +169,6 @@ function component(x, y, width, height, color, type) {
     this.update = function () {
         ctx = c.getContext("2d");
         if (this.type == "A1") {
-            
             /*
             UN-COMMENT THIS TO VISUALLY SEE HITBOXES
             ctx.fillStyle = "white";
@@ -178,22 +182,23 @@ function component(x, y, width, height, color, type) {
             ctx.fillRect(this.x, this.y, this.width, this.height); 
             */
             ctx.drawImage(A2, this.x-30, this.y-15);
-        } else if (this.type == "orb") {
+        } else if (this.type == "orb1") {
+            /*
             ctx.fillStyle = this.color; 
             ctx.beginPath();
             ctx.arc(this.x, this.y, 4, 0, 2*Math.PI);
             ctx.stroke();
+            */
+            ctx.drawImage(orb1Img, this.x - 10, this.y, 18, 33);
+        } else if (this.type == "orb2" ) {
+            ctx.drawImage(orb2Img, this.x-10, this.y, 18, 33);
         }
-
         //update health bars
-        
         perc1 = health1 / 500; 
         perc2 = health2 / 500;
-
         //Health Bar 1
         ctx1.fillStyle = "chartreuse";
         ctx1.fillRect(0,0, (hbar1.width * perc1), hbar1.height);
-
         //Health Bar 2 
         ctx2.fillStyle = "chartreuse";
         ctx2.fillRect(0, 0, (hbar2.width * perc2), hbar2.height);
@@ -277,7 +282,8 @@ function updateGame() {
                 health1 = Math.floor(health1);
                 if (health1 <= 0) {  //if health falls below zero, game over
                     gameOver = true;
-                    winner = "Bottom/blue/You win!"
+                    winner = "Blue wins!"
+                    
                 }
                 //console.log(health1);
             }
@@ -291,7 +297,8 @@ function updateGame() {
                 //console.log(health2);
                 if (health2 <= 0) {  //if health falls below zero, game over
                     gameOver = true;
-                    winner = "Top/Red/enemy wins!"
+                    winner = "Red wins!"
+                    
                 }
             }
         }
@@ -313,17 +320,24 @@ function updateGame() {
     } else if (gameOver) {
         //Put up font in myCanvas that the game is over! 
         ctx.font = "40px Arial";
+        //ctx.fillStyle(winner.color);
         ctx.fillText(winner, 100, 100);
-        clearInterval(intervalID);
+        clearInterval(intervalID); //stop SetInterval from continuing to run
     }
 
 }
 
 function AddOrbs(orbList, x, y) {
-    //the if statements makes it so that the orbs are spaced out 
+    //the 1st if statement makes it so that the orbs are spaced out 
     
     if ((frameNo / 10) % 1 == 0) {
-        orbList.push(new component(x, y, 15, 15, "black", "orb"));
+        if (orbList == Orbs1) {
+            orbList.push(new component(x, y, 15, 15, "black", "orb1"));
+            //console.log("ADDING A1 orbs");
+        } else if (orbList == Orbs2) {
+            orbList.push(new component(x, y, 15, 15, "black", "orb2"));
+            //console.log("adding A2 orbs");
+        }
     }
     //orbList.push(new component(x, y, 10, 10, "black", "orb"));
 }
@@ -348,25 +362,25 @@ function checkKey(e) {
     
     if (e.keyCode == '38') {
         // up arrow
-        shooting = true;
+        shooting2 = true;
         //console.log("up arrow being pressed");
     }
     else if (e.keyCode == '37') {
        // left arrow
-       left = true;
+       left2 = true;
     }
     else if (e.keyCode == '39') {
        // right arrow
-       right = true;
+       right2 = true;
     } else if (e.keyCode =='65') {
         //a 
-        left2 = true;
+        left = true;
     } else if (e.keyCode == '68') {
         //d
-        right2 = true;
+        right = true;
     } else if (e.keyCode == '83') {
         //s 
-        shooting2 = true;
+        shooting = true;
     }
 
 }
@@ -379,24 +393,24 @@ function resetMovement(e) {
     if (e.keyCode == '38') {
         // up arrow
         //console.log("undone");
-        shooting = false;
+        shooting2 = false;
     }
     else if (e.keyCode == '37') {
        // left arrow
-       left = false;
+       left2 = false;
     }
     else if (e.keyCode == '39') {
        // right arrow
-       right = false;
+       right2 = false;
     } else if (e.keyCode =='65') {
         //a 
-        left2 = false;
+        left = false;
     } else if (e.keyCode == '68') {
         //d
-        right2 = false;
+        right = false;
     } else if (e.keyCode == '83') {
         //s 
-        shooting2 = false;
+        shooting = false;
     }
 
 }
