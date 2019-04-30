@@ -33,6 +33,14 @@ var hbar2 = document.getElementById("hbar2");
 var ctx1 = hbar1.getContext("2d");
 var ctx2 = hbar2.getContext("2d");
 
+var gradient = ctx.createLinearGradient(0, 0, c.width, 0);
+gradient.addColorStop("0", "red");
+gradient.addColorStop("0.2", "orange");
+gradient.addColorStop("0.4", "yellow");
+gradient.addColorStop("0.6", "green");
+gradient.addColorStop("0.8", "blue");
+gradient.addColorStop("1", "purple");
+
 var background = new Image();
 var A1 = new Image();
 var A2 = new Image();
@@ -60,7 +68,7 @@ var right2 = false;
 var shooting2 = false;
 
 function startGame() {
-    //airplane components are    the hit boxes for the planes 
+    //airplane components are the hit boxes for the planes 
     airplane1 = new component(100, 15, 40,75, "red", "A1"); //A1 is red and at top
     airplane2 = new component(100, 400, 40, 75, "blue", "A2"); //A2 at bottom
 
@@ -135,6 +143,7 @@ function dispatchKeys(move){
     setTimeout(resetMovement, 1000, move); 
 }
 
+//Component - class definition - used for airplane and orbs (their hitboxes)
 function component(x, y, width, height, color, type) {
     this.x = x;
     this.y = y;
@@ -143,8 +152,6 @@ function component(x, y, width, height, color, type) {
     this.color = color;
     this.type = type;
     this.speedX = 5;
-    //if the plane is moving right, left, or shooting these will = true
-    
     
     this.update = function () {
         ctx = c.getContext("2d");
@@ -239,10 +246,6 @@ function component(x, y, width, height, color, type) {
         if ((mybottom < othertop) || (mytop > otherbottom) || (myright < otherleft) || (myleft > otherright)) {
             crash = false;
         }
-        /*
-        if ((mytop < otherbottom) && (myleft > otherleft) && (myright < otherright)) {
-            crash = true;
-        }*/
         return crash;
     }
 
@@ -262,7 +265,7 @@ function updateGame() {
                 health1 = Math.floor(health1);
                 if (health1 <= 0) {  //if health falls below zero, game over
                     gameOver = true;
-                    winner = "Blue wins!"
+                    winner = "B L U E  P L A N E  W I N S !"
                     
                 }
                 //console.log(health1);
@@ -277,7 +280,7 @@ function updateGame() {
                 //console.log(health2);
                 if (health2 <= 0) {  //if health falls below zero, game over
                     gameOver = true;
-                    winner = "Red wins!"
+                    winner = "R E D   P L A N E   W I N S !"
                     
                 }
             }
@@ -300,8 +303,8 @@ function updateGame() {
     } else if (gameOver) {
         //Put up font in myCanvas that the game is over! 
         ctx.font = "40px Arial";
-        //ctx.fillStyle(winner.color);
-        ctx.fillText(winner, 100, 100);
+        ctx.fillStyle = gradient;
+        ctx.fillText(winner, 20, 130);
         clearInterval(intervalID); //stop SetInterval from continuing to run
     }
 
@@ -336,6 +339,7 @@ function clearGameArea() {
 document.onkeydown = checkKey;
 document.onkeyup = resetMovement; 
 
+//When specific key is being pressed, the corresponding boolean for moving or shooting should be true
 function checkKey(e) {
     
     e = e || window.event;
