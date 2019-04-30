@@ -21,8 +21,8 @@ Server communication implemented by Sarah
 
 */
 
-
 var playerID = -1; // we're going to mimic HW5 a little here w/P2P fun
+var cpuVsPlayer = true;
 
 //Game canvas and contexts
 var c = document.getElementById("myCanvas");
@@ -64,6 +64,8 @@ function startGame() {
     airplane1 = new component(100, 15, 40,75, "red", "A1"); //A1 is red and at top
     airplane2 = new component(100, 400, 40, 75, "blue", "A2"); //A2 at bottom
 
+    cpuVsPlayer = window.confirm("Do you want to play against the CPU? Click OK to do that, or Cancel to play against a friend on the same computer.");
+
     //Add sources for plane and background pics
     A1.src = "opponentPlane.png";
     A2.src = "playerPlane.png";
@@ -81,8 +83,8 @@ function startGame() {
     var data = {};
     data.request = "gameStart";
     msg = queryObjectToString(data);
-    xmlhttp.open("GET","http://localhost:8080/?"+msg);
-    xmlhttp.send();
+    xmlHttpRequest.open("GET","http://localhost:8080/?"+msg);
+    xmlHttpRequest.send();
     
 }
 
@@ -91,70 +93,48 @@ function initOnload() {
     if (this.status == 200) {
         response = JSON.parse(this.responseText);
         playerID = response.id;
-        // sendPollRequests();
+        // console.log(playerID);
+        if (cpuVsPlayer){
+            setTimeout(sendPollRequest, 1000);
+        } else {
+            document.getElementById("helpBlurb").innerHTML = "Move the red plane with the A and D keys, and use the S key to shoot energy orbs!";
+        }
     }
 }
 
 // recursively polls the server for updates!
-function sendPollRequests(){
+function sendPollRequest(){
     // we will first prepare the opponent motion request
     var xmlHttpMovesRequest = new XMLHttpRequest();
-    // xmlHttpMotionRequest.onload = pollMotion
+    xmlHttpMovesRequest.onload = pollMotionOnload;
     xmlHttpMovesRequest.onerror = function () {console.log(
         "Error polling the server for moves")};
     var moveData = {};
     moveData.request = 'pollMotion';
-    moveData.id = myId;
+    moveData.id = playerID;
+    moveData.where = airplane1.x;
     moveMsg = queryObjectToString(moveData);  
-    xmlHttpMovesRequest.open("GET", "http://localhost:8080/?"+msg);
+    xmlHttpMovesRequest.open("GET", "http://localhost:8080/?"+moveMsg);
     xmlHttpMovesRequest.send();
 
-    // and now we prepare the damage request (sending in damage)
-    var xmlHttpHitRequest = new XMLHttpRequest();
-    // xmlHttpMotionRequest.onload = pollHits
-    xmlHttpHitsRequest.onerror = function () {console.log(
-        "Error polling the server for moves")};
-    var hitData = {};
-    hitData.request = 'pollHits';
-    hitData.id = myId;
-    hitMsg = queryObjectToString(hitData);  
-    xmlHttpHitsRequest.open("GET", "http://localhost:8080/?"+msg);
-    xmlHttpHitsRequest.send();
-
-    setTimeout(sendPollRequest,500);
+    setTimeout(sendPollRequest, 1000);
 }
 
 function pollMotionOnload(){
     if (this.status == 200) {
-        console.log("\nresponse text "+this.responseText);
+        // console.log("\nresponse text "+this.responseText);
         response = JSON.parse(this.responseText);
         cpuMoves = response.data;
-        // cpuMoves.forEach();
-        // ^ will be finished/resolved next Sarah update
+        // console.log(cpuMoves);
+        cpuMoves.forEach(dispatchKeys);
     }
 }
 
-/*
-//irrelevant now
-function checkForClicks() {
-    document.onKeyDown = function(e) {
-        switch (e.keyCode) {
-            case 37:
-                alert('left');
-                break;
-            case 38:
-                alert('up');
-                break;
-            case 39:
-                alert('right');
-                break;
-            case 40:
-                alert('down');
-                break;
-        }
-    };
+function dispatchKeys(move){
+    checkKey(move);
+    setTimeout(resetMovement, 1000, move); 
 }
-*/
+
 function component(x, y, width, height, color, type) {
     this.x = x;
     this.y = y;
@@ -357,8 +337,8 @@ document.onkeydown = checkKey;
 document.onkeyup = resetMovement; 
 
 function checkKey(e) {
+    
     e = e || window.event;
-
     
     if (e.keyCode == '38') {
         // up arrow
@@ -373,21 +353,22 @@ function checkKey(e) {
        // right arrow
        right2 = true;
     } else if (e.keyCode =='65') {
-        //a 
+        console.log("CHECKING LEFT"); 
         left = true;
     } else if (e.keyCode == '68') {
         //d
         right = true;
+        console.log("CHECKING RIGHT");
     } else if (e.keyCode == '83') {
         //s 
         shooting = true;
+        console.log("CHECKING ORBS");
     }
 
 }
 
 //once the key is lifted, the appropriate boolean should be changed back to being false 
 function resetMovement(e) {
-
     e = e || window.event;
 
     if (e.keyCode == '38') {
@@ -405,12 +386,15 @@ function resetMovement(e) {
     } else if (e.keyCode =='65') {
         //a 
         left = false;
+        console.log("RESETTING LEFT");
     } else if (e.keyCode == '68') {
         //d
         right = false;
+        console.log("RESETTING RIGHT");
     } else if (e.keyCode == '83') {
         //s 
         shooting = false;
+        console.log("RESETTING ORBS");
     }
 
 }
@@ -420,10 +404,10 @@ function resetMovement(e) {
 
 // stringifies query objects, this function doesn't mess around
 function queryObjectToString(query) {
-    console.log(query);
+    // console.log(query);
     var properties = Object.keys(query);
     var arrOfQueryStrings = properties.map(prop => prop+"="+handleSpaces(query[prop].toString()));
-    console.log(arrOfQueryStrings.join('&'));
+    // console.log(arrOfQueryStrings.join('&'));
     return(arrOfQueryStrings.join('&'));
  }
 
