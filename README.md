@@ -6,8 +6,3 @@
 3. Run $node app.js
 4. Navigate to https://localhost:8080/OurGame.html
 5. Done playing? Quit or halt your command line and close that website tab.
-
-## How to Play
-- Your goal is to use your blue plane to shoot energy orbs at the opponent's red plane!
-- To dodge orbs and move your plane, use the left and right arrow keys.
-- To shoot orbs, press the up arrow key.
