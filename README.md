@@ -6,3 +6,5 @@
 3. Run $node app.js
 4. Navigate to https://localhost:8080/OurGame.html
 5. Done playing? Quit or halt your command line and close that website tab.
+
+[ EDIT 12/29/2020 ] renamed master to main! why? look here: <https://www.hanselman.com/blog/easily-rename-your-git-default-branch-from-master-to-main>
